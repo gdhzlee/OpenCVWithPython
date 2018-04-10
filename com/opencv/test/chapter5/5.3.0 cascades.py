@@ -1,6 +1,6 @@
 import cv2
 
-filename = "../../../../resources/image/6.jpg"
+filename = "../../../../resources/image/1.jpg"
 
 def detect(filename):
     face_cascade = cv2.CascadeClassifier("../../cascades/haarcascade_frontalface_default.xml")
@@ -33,12 +33,12 @@ def detect(filename):
         minSize – Minimum possible object size. Objects smaller than that are ignored.
         maxSize – Maximum possible object size. Objects larger than that are ignored.
     """
-    eye = eye_cascade.detectMultiScale(gray, 1.03, 1, 0, (2, 2))
+    eye = eye_cascade.detectMultiScale(gray, 1.03, 1, 0, (40, 40))
     for (x, y, w, h) in eye:
         img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     cv2.namedWindow("faces")
-    cv2.imshow("faces", img)
+    cv2.imshow("faces", cv2.pyrDown(img))
     cv2.waitKey(0)
 
-detect(filename)
+detect( filename )

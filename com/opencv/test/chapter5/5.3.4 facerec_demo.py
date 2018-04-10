@@ -46,7 +46,31 @@ def face_rec():
     #     out_dir = sys.argv[2]
 
     # 需要安装opencv_contrib模块
-    # cv2.face
+    model = cv2.face.EigenFaceRecognizer_create()
+    model.train(np.asarray(X), np.asarray(y))
+
+    face_cascade = cv2.CascadeClassifier("../../cascades/haarcascade_frontalface_default.xml")
+    img = cv2.imread("../../../../resources/image/1.jpg")
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    for (x, y, w, h) in faces:
+        img = cv2.rectangle(img.copy(), (x, y), (x + w, y + h), (255, 0, 0), 2)
+        roi = gray[y:(y+h),x:(x+w) ]
+        cv2.imshow("roi", roi)
+        try:
+            roi = cv2.resize(roi, (200, 200), interpolation=cv2.INTER_LINEAR)
+            params = model.predict(roi)
+            print("Label: {0}, Confidence: {1}".format(params[0], params[1]))
+            cv2.imshow("Label: {0}, Confidence: {1}".format(params[0], params[1]), roi)
+            cv2.waitKey(5000)
+            cv2.putText(img, names[params[0]], (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2)
+
+        except Exception as e:
+            print(e)
+            continue
+
+    cv2.imshow("faces", img)
+    cv2.waitKey(0)
 
 if __name__ == "__main__":
 

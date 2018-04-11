@@ -33,7 +33,7 @@ def read_images (path, sz = None) :
 
 def face_rec():
 
-    names = ['Joe', 'Jane', 'Jack']
+    names = ['Joe', 'Jane', 'Jack','lee']
     # if len(sys.argv) < 2:
     #     print("缺少参数 </path/to/images>"
     #           "[</path/to/store/images/at>]")
@@ -55,16 +55,13 @@ def face_rec():
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     for (x, y, w, h) in faces:
         img = cv2.rectangle(img.copy(), (x, y), (x + w, y + h), (255, 0, 0), 2)
-        roi = gray[y:(y+h),x:(x+w) ]
-        cv2.imshow("roi", roi)
+        roi = gray[y:(y+h), x:(x+w)]
         try:
             roi = cv2.resize(roi, (200, 200), interpolation=cv2.INTER_LINEAR)
             params = model.predict(roi)
             print("Label: {0}, Confidence: {1}".format(params[0], params[1]))
-            cv2.imshow("Label: {0}, Confidence: {1}".format(params[0], params[1]), roi)
-            cv2.waitKey(5000)
-            cv2.putText(img, names[params[0]], (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2)
 
+            cv2.putText(img, names[params[0]], (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, 2)
         except Exception as e:
             print(e)
             continue

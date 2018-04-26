@@ -6,6 +6,8 @@ img = np.zeros((3,3), dtype = np.uint8);
 print(img);
 
 img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR);
+
+cv2.COLOR_BGR2GRAY
 print(img)
 
 randomByteArray = bytearray(os.urandom(120000));

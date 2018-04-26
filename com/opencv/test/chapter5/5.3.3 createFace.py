@@ -4,7 +4,7 @@ import cv2
 def generate():
     face_cascade = cv2.CascadeClassifier("../../cascades/haarcascade_frontalface_default.xml")
 
-    img = cv2.imread("../../../../resources/image/1.jpg")
+    img = cv2.imread("../../../../resources/image/12.jpg")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     face = face_cascade.detectMultiScale(gray, 1.3, 5)

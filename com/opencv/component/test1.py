@@ -1,29 +1,11 @@
 import wx
 import cv2
-
-# class MyPanel(wx.Panel):
-#
-#     def __init__(self):
-#         wx.Panel.__init__(self)
-#         # # 视图
-#         self.image = wx.Image("../../../resources/image/4.jpg")
-#         self.bitImage = self.image.ConvertToBitmap()
-#         self.Bind(wx.EVT_PAINT, self.OnPaint)
-#
-#         dc = wx.ClientDC(self)
-#         dc.DrawBitmap(self.bitImage, 30, 30, True)
-#
-#     def OnPaint(self, event):
-#         dc = wx.PaintDC(self)
-#         dc.DrawBitmap(self.bitImage, 30, 30, True)
+import os
 
 class MyWindows(wx.Frame):
 
     def __init__(self, parent, id):
         wx.Frame.__init__(self, parent, id, title = "人脸识别系统", size=(1000, 800))
-
-        panel = wx.Panel(self)
-        sizer = wx.GridBagSizer(0,0)
 
         # 菜单栏
         menuBar = wx.MenuBar()
@@ -40,41 +22,51 @@ class MyWindows(wx.Frame):
         menuBar.Append(fileMenu, "文件")
         self.SetMenuBar(menuBar)
 
+        # 显示模块
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
 
+        # 控制模块
+        control = wx.Panel(self)
+        controlSizer = wx.GridBagSizer(0, 0)
         # 按钮
-        # tc4 = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
-        panel1 = wx.Panel(self)
-        sizer.Add(panel1, pos=(0, 0), span=(35,70), flag=wx.EXPAND | wx.ALL, border=5)
-        panel2 = wx.Panel(self)
-        sizer.Add(panel2, pos=(0,78),span=(1,12),flag=wx.EXPAND | wx.ALL ,border=5)
-        panel3 = wx.Panel(self)
-        sizer.Add(panel3, pos=(35, 0), span=(2, 0), flag=wx.EXPAND | wx.ALL, border=5)
+        detect = wx.Button(control, wx.NewId(), "检测")
+        controlSizer.Add(detect, pos=(3, 5), flag=wx.ALL, border=5)
+        tip = wx.StaticText(control, label="人脸信息：")
+        controlSizer.Add(tip, pos=(4, 5), flag=wx.ALL, border=5)
+        tc = wx.TextCtrl(control)
+        controlSizer.Add(tc, pos=(5, 5), flag=wx.ALL, border=5)
+        identify = wx.Button(control, wx.NewId(), "识别")
+        controlSizer.Add(identify, pos=(8, 5), flag=wx.ALL, border=5)
+        # 事件绑定
+        control.Bind(wx.EVT_BUTTON, self.detect, detect)
+        control.Bind(wx.EVT_BUTTON, self.identify, identify)
+        # 控制模块布局器
+        control.SetSizerAndFit(controlSizer)
 
-        # identify1 = wx.Button(panel1, wx.NewId(), "识别1")
-        # sizer.Add(identify1, pos=(0, 20), flag=wx.ALL, border=5)
+        # 全局布局器
+        sizer = wx.GridBagSizer(0, 0)
+        sizer.Add(control, pos=(0,70),span=(35,30),flag=wx.EXPAND | wx.ALL ,border=5)
+        self.SetSizerAndFit(sizer)
 
-        detect = wx.Button(panel1, wx.NewId(), "检测")
-        sizer.Add(detect, pos=(2, 78), flag=wx.ALL, border=5)
-
-        tip = wx.StaticText(panel1, label="人脸信息：")
-        sizer.Add(tip, pos=(3, 78), flag=wx.ALL, border=5)
-        tc = wx.TextCtrl(panel1)
-        sizer.Add(tc, pos=(4, 78), flag=wx.ALL, border=5)
-
-        identify = wx.Button(panel1, wx.NewId(), "识别")
-        sizer.Add(identify, pos=(8, 78), flag=wx.ALL, border=5)
-
-        panel.Bind(wx.EVT_BUTTON, self.detect, detect)
-        panel.Bind(wx.EVT_BUTTON, self.identify, identify)
-
-        panel.SetSizerAndFit(sizer)
-
-        # # # 视图
-        # panel1.Bind(wx.EVT_ERASE_BACKGROUND, self.OnPaint)
-
+        #
+        self._image = "../../../resources/image/6.jpg"
 
     def importFromLocal(self, event):
         print("从本地导入单张图像")
+        dlg = wx.FileDialog(self, message=u"选择文件",
+                            defaultDir=os.getcwd(),
+                            defaultFile="",
+                            wildcard="",
+                            style=0)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            paths = dlg.GetPaths()
+            print(paths)
+            for path in paths:
+                print(path)
+                self._image = path
+        self.OnPaint(self)
+        dlg.Destroy()
 
     def importFromVideo(self, event):
         # self.show(self, event)
@@ -90,15 +82,28 @@ class MyWindows(wx.Frame):
         print("识别")
 
     def OnPaint(self, event):
-        bitImage = wx.Bitmap("../../../resources/image/4.jpg")
         dc = wx.ClientDC(self)
-        dc.DrawBitmap(bitImage, 30, 30, True)
+        # 按比例缩小
+        try:
+            img = cv2.imread(self._image)
+            if img is None:
+                print("打不开图像")
+            height, width = img.shape[0:2]
+            while(height > 800 or width > 700):
+                img = cv2.pyrDown(img)
+                height, width = img.shape[0:2]
+            cv2.imwrite(self._image, img)
+            print("保存图片成功")
+            bitImage = wx.Bitmap(self._image)
+            print("读取图片成功")
+            dc.DrawBitmap(bitImage,0,0)
+
+        except Exception as e:
+            print(e)
+            wx.MessageBox("打不开图片", "消息", wx.OK | wx.ICON_INFORMATION)
 
 if __name__=="__main__":
     app = wx.App()
-    # # 视图
-    # image = wx.Image("../../../resources/image/4.jpg")
-    # bitImage = image.ConvertToBitmap()
     myWindow = MyWindows(parent=None, id =wx.NewId())
     myWindow.Show()
     app.MainLoop()

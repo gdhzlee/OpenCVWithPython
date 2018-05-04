@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from com.opencv.component import utils
 
 class Filters(object):
     def strokeEdges(src, dst, blurKsize = 7, edgeKsize = 5):

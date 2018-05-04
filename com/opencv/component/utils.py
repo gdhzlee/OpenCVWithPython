@@ -28,10 +28,11 @@ class ImageUtils(object):
                 if os.path.isdir(faceDir):
                     continue
                 faceImg = cv2.imread(faceDir)
+                faceImgGray = cv2.cvtColor(faceImg, cv2.COLOR_BGR2GRAY)
                 if faceImg is None:
                     continue
 
-                FACE.append(faceImg)
+                FACE.append(faceImgGray)
                 COUNT.append(count)
                 # print("     " + face)
             count += 1
@@ -56,7 +57,7 @@ class ImageUtils(object):
             count += 1
         count += 1
         faceDir = os.path.join(personDir, str(count) + ".jpg")
-        faceImg = cv2.resize(faceImg, [200,200])
+        faceImg = cv2.resize(faceImg, (200,200))
         cv2.imwrite(faceDir, faceImg)
 
 if __name__=="__main__":

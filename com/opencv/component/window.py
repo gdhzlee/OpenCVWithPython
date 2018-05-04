@@ -4,6 +4,7 @@ import cv2
 import os
 from time import ctime, sleep
 from threading import Thread
+from com.opencv.component.facerecognizer import *
 
 class MyWindows(wx.Frame):
 
@@ -54,6 +55,9 @@ class MyWindows(wx.Frame):
         # 缓冲图像
         self._imageBuffer = "../../../resources/tem/tem.jpg"
 
+        self._faceDetect = Detect()
+        self._faceRecognizar = Recognize()
+
         # 控制
         """
         0 - 不做任何处理
@@ -62,19 +66,19 @@ class MyWindows(wx.Frame):
        """
         self._control = 0
 
-        # 是否在视频播放
-        self._isVideo = False
-
         # 是否在进行视频线程
-        self._thread = False
+        self._vidowThread = None
+
+        # 五、绑定事件
+        self.Bind(wx.EVT_CLOSE, self.closeEvent)
 
     """
         绑定函数
     """
     # 从本地导入单张图像
     def importFromLocal(self, event):
-        self._isVideo = False
-        self._thread = False
+        self._vidowThread = None
+        self._control = 0
         dlg = wx.FileDialog(self, message="选择文件",
                             defaultDir=os.getcwd(),
                             wildcard="JPG files (*.jpg)|*.jpg|BMP files (*.bmp)|*.bmp|PNG files (*.png)|*.png",
@@ -92,18 +96,19 @@ class MyWindows(wx.Frame):
                     img = cv2.pyrDown(img)
                     height, width = img.shape[0:2]
                 cv2.imwrite(self._imageBuffer, img)
-                self.OnPaint(self)
+                self.cleanCanvas()
+                self.OnPaint()
             except:
-                wx.MessageBox("读取图片失败", "消息", wx.OK | wx.ICON_INFORMATION)
+                wx.MessageBox("不是标准的图片格式", "消息", wx.OK | wx.ICON_INFORMATION)
             finally:
                 dlg.Destroy()
 
     # 从本地导入视频
     def importFromVideo(self, event):
-        self._thread = False
-        sleep(0.05)
-        self._thread = True
-        self._isVideo = True
+        self._vidowThread = None
+        self._control = 0
+
+        # 读取视频
         dlg = wx.FileDialog(self, message="选择文件",
                             defaultDir=os.getcwd(),
                             wildcard="MP4 files (*.mp4)|*.mp4|RMVB files (*.rmvb)|*.rmvb|AVI files (*.avi)|*.avi|MKV files (*.mkv)|*.mkv",
@@ -111,30 +116,37 @@ class MyWindows(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             path = dlg.GetPaths()[0]
             print("视频路径: " + str(path))
+
             try:
                cap =  cv2.VideoCapture(path)
+               print(cap.isOpened())
                if cap.isOpened() is False:
                    raise Exception
-               self._thread = Thread(target=self.showVideo,args=(cap,), name="showVideo")
-               self._thread.start()
+
+               # 显示视频帧
+               self.cleanCanvas()
+               self._vidowThread = Thread(target=self.showVideo,args=(cap,), name="showVideo")
+               self._vidowThread.start()
             except:
-                wx.MessageBox("读取视频失败", "消息", wx.OK | wx.ICON_INFORMATION)
+                wx.MessageBox("不是标准的视频文件", "消息", wx.OK | wx.ICON_INFORMATION)
             finally:
                 dlg.Destroy()
 
     # 从摄像头导入视频帧
     def importFromCapture(self, event):
-        self._thread = False
-        sleep(0.05)
-        self._thread = True
-        self._isVideo = True
+        self._vidowThread = False
+        self._control = 0
+
         try:
+            # 调用摄像头
             cap = cv2.VideoCapture(0)
             if cap.isOpened() is False:
                 raise Exception
 
-            self._thread = Thread(target=self.showVideo, args=(cap,), name="showCap")
-            self._thread.start()
+            # 显示视频帧
+            self.cleanCanvas()
+            self._vidowThread = Thread(target=self.showVideo, args=(cap,), name="showCap")
+            self._vidowThread.start()
         except:
             wx.MessageBox("无法获取摄像头", "消息", wx.OK | wx.ICON_INFORMATION)
 
@@ -142,16 +154,13 @@ class MyWindows(wx.Frame):
     def startDetect(self, event):
         input = self._input.GetValue()
         print("输入：" + str(input))
-        if cv2.imread(self._imageBuffer) is None:
-            wx.MessageBox("当前没有图像输入", "消息", wx.OK | wx.ICON_INFORMATION)
-            return
         if input == "":
             wx.MessageBox("请输入人脸信息", "消息", wx.OK | wx.ICON_INFORMATION)
             return
 
         # 开启检测
         self._control = 1
-
+        self.OnPaint()
     # 开启识别
     def startIdentify(self, event):
         if cv2.imread(self._imageBuffer) is None:
@@ -160,46 +169,69 @@ class MyWindows(wx.Frame):
 
         # 开启识别
         self._control = 2
+        self.OnPaint()
+
+    # 关闭程序
+    def closeEvent(self, event):
+        self._vidowThread = None
+        self.Destroy()
 
     """
         内部函数
     """
-    def detect(self):
+    def process(self):
+        if self._control == 1:
+            input = self._input.GetValue()
+            print("输入：" + str(input))
+            if input == "":
+                wx.MessageBox("请输入人脸信息", "消息", wx.OK | wx.ICON_INFORMATION)
+                self._control = 0
+                return
+            imgBuffer = cv2.imread(self._imageBuffer)
+            imgBuffer = self._faceDetect.detect(img = imgBuffer,faceInfos=input)
+            cv2.imwrite(self._imageBuffer, imgBuffer)
+            return
+        if self._control == 2:
+            imgBuffer = cv2.imread(self._imageBuffer)
+            imgBuffer = self._faceRecognizar.recognize(img=imgBuffer)
+            cv2.imwrite(self._imageBuffer, imgBuffer)
+            return
 
-        try:
-            img = cv2.imread(self._imageBuffer)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            # face = face_cascade.detectMultiScale(gray, 1.3, 5)
-        except:
-            pass
-        return
-
+    # 显示视频
     def showVideo(self, cap):
         try:
             while cap.isOpened():
                 ret, frame = cap.read()
-                if ret is False or self._thread is False:
+                if ret is False or self._vidowThread is None:
                     break
                 height, width = frame.shape[0:2]
                 while height > 800 or width > 700:
                     frame = cv2.pyrDown(frame)
                     height, width = frame.shape[0:2]
                 cv2.imwrite(self._imageBuffer, frame)
-                self.OnPaint(self)
+                self.OnPaint()
                 sleep(0.05)
             print("视频完毕")
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
-    def OnPaint(self, event):
+    def OnPaint(self):
         try:
+            self.process()
             dc = wx.ClientDC(self)
-            if self._isVideo is False:
-                dc.Clear()
             bitImage = wx.Bitmap(self._imageBuffer)
             dc.DrawBitmap(bitImage, 0, 0)
-        except:
-            pass
+            dc.Destroy()
+        except Exception as e:
+            print(e)
+
+    def cleanCanvas(self):
+        try:
+            dc = wx.ClientDC(self)
+            dc.Clear()
+            dc.Destroy()
+        except Exception as e:
+            print(e)
 
 if __name__=="__main__":
     app = wx.App()

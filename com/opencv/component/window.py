@@ -161,6 +161,7 @@ class MyWindows(wx.Frame):
         # 开启检测
         self._control = 1
         self.OnPaint()
+
     # 开启识别
     def startIdentify(self, event):
         if cv2.imread(self._imageBuffer) is None:
@@ -179,6 +180,7 @@ class MyWindows(wx.Frame):
     """
         内部函数
     """
+    # 图像处理
     def process(self):
         if self._control == 1:
             input = self._input.GetValue()
@@ -211,10 +213,10 @@ class MyWindows(wx.Frame):
                 cv2.imwrite(self._imageBuffer, frame)
                 self.OnPaint()
                 sleep(0.05)
-            print("视频完毕")
         except Exception as e:
             print(e)
 
+    # 显示
     def OnPaint(self):
         try:
             self.process()
@@ -225,6 +227,7 @@ class MyWindows(wx.Frame):
         except Exception as e:
             print(e)
 
+    # 清理画布
     def cleanCanvas(self):
         try:
             dc = wx.ClientDC(self)

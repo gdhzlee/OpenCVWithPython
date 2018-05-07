@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from time import ctime
 from com.opencv.component.utils import ImageUtils
 
 class FaceRecognization(object):
